@@ -21,7 +21,7 @@ Contains docker images for the following softwares:
 To build the docker images for the environments, run:
 
 ```sh
-cd environment
+cd compose
 docker-compose build
 ```
 
@@ -30,7 +30,7 @@ docker-compose build
 To start the containers for the environment, run:
 
 ```sh
-cd environment
+cd compose
 docker-compose up -d
 ```
 
@@ -39,6 +39,6 @@ docker-compose up -d
 To stop the containers for the environment, run:
 
 ```sh
-cd environment
+cd compose
 docker-compose down
 ```
