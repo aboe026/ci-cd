@@ -2,12 +2,17 @@
 
 Continuous Integration/Continuous Deployment environment and scripts
 
+---
+
 ## Environment variables
 
 This project expects the following environment variables to be defined:
 
-- `CICD_JENKINS_VOLUME` - The path to where the Jenkins `jenkins_home` directory should reside on the local filesystem.
-- `CICD_NEXUS_VOLUME` - The path to where the Jenkins `nexus-data` directory should reside on the local filesystem.
+- `CICD_JENKINS_VOLUME` - The path to where the Jenkins `jenkins_home` directory resides on the local filesystem.
+- `CICD_NEXUS_VOLUME` - The path to where the Jenkins `nexus-data` directory resides on the local filesystem.
+- `BACKUP_DIRECTORY` - The path to where backup zips should be stored (only needed when running [backups](#run))
+
+---
 
 ## Environment
 
@@ -21,17 +26,21 @@ Contains docker images for the following softwares:
 To build the docker images for the environments, run:
 
 ```sh
-cd compose
-docker-compose build
+npm run build
 ```
 
 ### Start
 
-To start the containers for the environment, run:
+The firt time brining the environment up, run:
 
 ```sh
-cd compose
-docker-compose up -d
+npm run create
+```
+
+Subsequently, run:
+
+```sh
+npm run start
 ```
 
 ### Stop
@@ -39,6 +48,31 @@ docker-compose up -d
 To stop the containers for the environment, run:
 
 ```sh
-cd compose
-docker-compose down
+npm run stop
+```
+
+---
+
+## Backups
+
+### Install Dependencies
+
+The backup operation requires [npm](https://www.npmjs.com/) dependencies to execute. To install those depencencies, run:
+
+```sh
+npm install
+```
+
+### Run
+
+To create backups for the environment volumes, run:
+
+```sh
+npm run backup
+```
+
+optionally specifying a specific service to backup:
+
+```sh
+npm run backup -- --service=nexus
 ```
