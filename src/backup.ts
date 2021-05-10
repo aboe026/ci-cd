@@ -5,11 +5,16 @@ dotenv.config({
 })
 
 import archiver from 'archiver'
+import bytes from 'bytes'
 import { cleanEnv, str } from 'envalid'
+import cliProgress, { Options, ValueType } from 'cli-progress'
+import fastFolderSize from 'fast-folder-size'
 import fs from 'fs-extra'
 import Docker from 'dockerode'
 import { hideBin } from 'yargs/helpers'
+import humanizeDuration from 'humanize-duration'
 import log4js from 'log4js'
+import { promisify } from 'util'
 import yargs from 'yargs'
 
 enum SERVICE_NAME {
@@ -17,6 +22,17 @@ enum SERVICE_NAME {
   Nexus = 'nexus',
 }
 
+enum CONTAINER_STATE {
+  Created = 'created',
+  Running = 'running',
+  Paused = 'paused',
+  Restarting = 'restarting',
+  Removing = 'removing',
+  Exited = 'exited',
+  Dead = 'dead',
+}
+
+const fastFolderSizeAsync = promisify(fastFolderSize)
 const env = cleanEnv(process.env, {
   CICD_JENKINS_VOLUME: str({
     desc: 'The path to where the Jenkins "jenkins_home" directory resides on the local filesystem.',
@@ -40,6 +56,14 @@ const args = yargs(hideBin(process.argv)).options({
     choices: [SERVICE_NAME.Jenkins, SERVICE_NAME.Nexus],
     demandOption: false,
     requiresArg: true,
+  },
+  skipDockerCheck: {
+    alias: 'd',
+    desc: 'Whether or not the status of the docker container for the service should be checked to see if still running',
+    type: 'boolean',
+    demandOption: false,
+    requiresArg: false,
+    default: false,
   },
 }).argv
 const logger = log4js
@@ -94,12 +118,7 @@ function serviceIncluded(service: SERVICE_NAME): boolean {
 
 async function backup({ containerName, volumePath }: { containerName: string; volumePath: string }): Promise<void> {
   logger.info(`Backing up container '${containerName}' with volume '${volumePath}' to '${env.BACKUP_DIRECTORY}'...`)
-  const container = await getContainer(containerName)
-  if (container && container.State !== CONTAINER_STATE.Exited) {
-    throw Error(
-      `Container '${containerName}' state of '${container.State}' is not in the required state of '${CONTAINER_STATE.Exited}'`
-    )
-  }
+  await ensureContainerInState(containerName, CONTAINER_STATE.Exited)
   if (!(await fs.pathExists(volumePath))) {
     throw Error(`Volume path of '${volumePath}' does not exist.`)
   }
@@ -116,6 +135,11 @@ function getDockerClient(): Docker {
 }
 
 async function getContainer(name: string): Promise<Docker.ContainerInfo | undefined> {
+  try {
+    await getDockerClient().ping()
+  } catch (err) {
+    throw Error(`Cannot communicate with docker. Make sure docker daemon is running. Error: '${JSON.stringify(err)}'`)
+  }
   const containers = await getDockerClient().listContainers({
     all: true,
     filters: {
@@ -132,27 +156,89 @@ async function getContainer(name: string): Promise<Docker.ContainerInfo | undefi
   }
 }
 
+async function ensureContainerInState(containerName: string, state: CONTAINER_STATE): Promise<void> {
+  if (args.skipDockerCheck) {
+    logger.trace('Not checking container state due to --skipDockerCheck flag')
+  } else {
+    const container = await getContainer(containerName)
+    if (container && container.State !== state) {
+      throw Error(
+        `Container '${containerName}' state of '${container.State}' is not in the required state of '${state}'`
+      )
+    }
+  }
+}
+
 async function zipDirectory({ sourcePath, outputPath }: { sourcePath: string; outputPath: string }): Promise<void> {
   const archive = archiver('zip', { zlib: { level: 9 } })
   const stream = fs.createWriteStream(outputPath)
 
+  const totalSize = await fastFolderSizeAsync(sourcePath)
+  const progressBar = new cliProgress.SingleBar(
+    {
+      format: ' {bar} {percentage}% | ETA: {eta_formatted} | {value}/{total}',
+      formatValue: (value: number, options: Options, type: ValueType): string => {
+        // padding
+        function autopadding(value: number, length: number, options: Options) {
+          return options && options.autopaddingChar
+            ? (options.autopaddingChar + value).slice(-length).toString()
+            : value.toString()
+        }
+
+        switch (type) {
+          case 'percentage':
+            return autopadding(value, 3, options)
+
+          case 'total':
+          case 'value':
+            return bytes(value)
+
+          default:
+            return value.toString()
+        }
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      formatTime: (timeSecs: number, options: Options, roundToMultipleOf: number) => {
+        return shortEnglishHumanizer(timeSecs * 1000, {
+          largest: timeSecs < 60 ? 1 : 2,
+          maxDecimalPoints: 1,
+          spacer: '',
+          delimiter: '',
+        })
+      },
+    },
+    cliProgress.Presets.shades_classic
+  )
+  progressBar.start(totalSize, 0)
   return new Promise((resolve, reject) => {
     archive
       .directory(sourcePath, false)
       .on('error', (err) => reject(err))
+      .on('progress', (progress) => {
+        progressBar.update(progress.fs.processedBytes)
+      })
       .pipe(stream)
 
-    stream.on('close', () => resolve())
+    stream.on('close', () => {
+      progressBar.stop()
+      resolve()
+    })
     archive.finalize()
   })
 }
 
-enum CONTAINER_STATE {
-  Created = 'created',
-  Running = 'running',
-  Paused = 'paused',
-  Restarting = 'restarting',
-  Removing = 'removing',
-  Exited = 'exited',
-  Dead = 'dead',
-}
+const shortEnglishHumanizer = humanizeDuration.humanizer({
+  language: 'shortEn',
+  languages: {
+    shortEn: {
+      y: () => 'y',
+      mo: () => 'mo',
+      w: () => 'w',
+      d: () => 'd',
+      h: () => 'h',
+      m: () => 'm',
+      s: () => 's',
+      ms: () => 'ms',
+    },
+  },
+})
