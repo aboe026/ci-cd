@@ -8,6 +8,7 @@ import archiver from 'archiver'
 import bytes from 'bytes'
 import { cleanEnv, str } from 'envalid'
 import cliProgress, { Options, ValueType } from 'cli-progress'
+// @ts-ignore
 import fastFolderSize from 'fast-folder-size'
 import fs from 'fs-extra'
 import Docker from 'dockerode'
