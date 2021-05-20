@@ -49,6 +49,10 @@ const env = cleanEnv(process.env, {
     choices: ['all', 'trace', 'debug', 'info', 'warn', 'error', 'fatal', 'mark', 'off'],
     desc: 'The most granular log level to output (all < trace < debug < info < warn < error < fatal < mark < off).',
   }),
+  BACKUP_HISTORY_DIRECTORY: str({
+    desc: 'path to where the backup zips should be stored with a unique date stamp for historical purposes',
+    default: '',
+  }),
 })
 const args = yargs(hideBin(process.argv)).options({
   service: {
@@ -123,12 +127,27 @@ async function backup({ containerName, volumePath }: { containerName: string; vo
   if (!(await fs.pathExists(volumePath))) {
     throw Error(`Volume path of '${volumePath}' does not exist.`)
   }
-  const destination = path.join(env.BACKUP_DIRECTORY, `${path.basename(volumePath)}-backup.zip`)
-  logger.debug(`Zipping directory '${volumePath}' to '${destination}'...`)
+  const backupPath = path.join(env.BACKUP_DIRECTORY, `${path.basename(volumePath)}-backup.zip`)
+  logger.debug(`Zipping directory '${volumePath}' to '${backupPath}'...`)
   await zipDirectory({
     sourcePath: volumePath,
-    outputPath: destination,
+    outputPath: backupPath,
   })
+  if (env.BACKUP_HISTORY_DIRECTORY) {
+    if (!(await fs.pathExists(env.BACKUP_HISTORY_DIRECTORY))) {
+      throw Error(
+        `Path '${env.BACKUP_HISTORY_DIRECTORY}' specified in BACKUP_HISTORY_DIRECTORY environment variable does not exist. Must be a valid directory or unset.`
+      )
+    }
+    const historicalPath = path.join(
+      env.BACKUP_HISTORY_DIRECTORY,
+      `${path.basename(volumePath)}-backup-${new Date().toISOString().split('T')[0]}.zip`
+    )
+    logger.info(`Copying zip '${backupPath}' to '${historicalPath}' for historical purposes...`)
+    await fs.copy(backupPath, historicalPath)
+  } else {
+    logger.debug('Skipping copy of historical zip due to absence of BACKUP_HISTORY_DIRECTORY environment variable.')
+  }
 }
 
 function getDockerClient(): Docker {
