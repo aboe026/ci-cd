@@ -15,6 +15,7 @@ import Docker from 'dockerode'
 import { hideBin } from 'yargs/helpers'
 import humanizeDuration from 'humanize-duration'
 import log4js from 'log4js'
+import moment from 'moment'
 import { promisify } from 'util'
 import yargs from 'yargs'
 
@@ -141,7 +142,7 @@ async function backup({ containerName, volumePath }: { containerName: string; vo
     }
     const historicalPath = path.join(
       env.BACKUP_HISTORY_DIRECTORY,
-      `${path.basename(volumePath)}-backup-${new Date().toISOString().split('T')[0]}.zip`
+      `${path.basename(volumePath)}-backup-${moment().format('YYYY-MM-DD')}.zip`
     )
     logger.info(`Copying zip '${backupPath}' to '${historicalPath}' for historical purposes...`)
     await fs.copy(backupPath, historicalPath)
