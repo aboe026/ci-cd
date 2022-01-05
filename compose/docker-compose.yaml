@@ -6,7 +6,7 @@ services:
       context: ./
       dockerfile: jenkins.Dockerfile
     ports:
-      - '8080:8080'
+      - '${CICD_JENKINS_PORT}:8080'
     environment:
       - JAVA_OPTS="-Dorg.apache.commons.jelly.tags.fmt.timeZone=America/New_York -Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400"
     volumes:
@@ -16,6 +16,6 @@ services:
   nexus:
     image: sonatype/nexus3
     ports:
-      - '8081:8081'
+      - '${CICD_NEXUS_PORT}:8081'
     volumes:
       - $CICD_NEXUS_VOLUME:/nexus-data
