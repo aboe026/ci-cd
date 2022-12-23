@@ -51,6 +51,14 @@ To stop the containers for the environment, run:
 npm run stop
 ```
 
+### Upgrade
+
+1. Update image tag references for [nexus](./compose/docker-compose.yaml) and [jenkins](./compose/jenkins.Dockerfile)
+
+   - Optionall change tags to `latest` and `lts` respectively to and pull to automatically get latest
+
+2. Create containers again with `npm run create`
+
 ---
 
 ## Backups
