@@ -22,6 +22,7 @@ import yargs from 'yargs'
 enum SERVICE_NAME {
   Jenkins = 'jenkins',
   Nexus = 'nexus',
+  Registry = 'registry',
 }
 
 enum CONTAINER_STATE {
@@ -36,11 +37,8 @@ enum CONTAINER_STATE {
 
 const fastFolderSizeAsync = promisify(fastFolderSize)
 const env = cleanEnv(process.env, {
-  CICD_JENKINS_VOLUME: str({
-    desc: 'The path to where the Jenkins "jenkins_home" directory resides on the local filesystem.',
-  }),
-  CICD_NEXUS_VOLUME: str({
-    desc: 'The path to where the Jenkins "nexus-data" directory resides on the local filesystem.',
+  CICD_VOLUME_DIR: str({
+    desc: 'The path to where the ci-cd volumes reside on the host/local filesystem.',
   }),
   BACKUP_DIRECTORY: str({
     desc: 'The path to where the backup zips should be stored',
@@ -92,14 +90,20 @@ const logger = log4js
   try {
     if (serviceIncluded(SERVICE_NAME.Nexus)) {
       await backup({
-        containerName: 'cicd_nexus_1',
-        volumePath: env.CICD_NEXUS_VOLUME,
+        containerName: 'cicd-nexus-1',
+        volumePath: path.join(env.CICD_VOLUME_DIR, 'nexus-data'),
       })
     }
     if (serviceIncluded(SERVICE_NAME.Jenkins)) {
       await backup({
-        containerName: 'cicd_jenkins_1',
-        volumePath: env.CICD_JENKINS_VOLUME,
+        containerName: 'cicd-jenkins-1',
+        volumePath: path.join(env.CICD_VOLUME_DIR, 'jenkins_home'),
+      })
+    }
+    if (serviceIncluded(SERVICE_NAME.Registry)) {
+      await backup({
+        containerName: 'cicd-registry-1',
+        volumePath: path.join(env.CICD_VOLUME_DIR, 'docker-registry'),
       })
     }
   } catch (e) {

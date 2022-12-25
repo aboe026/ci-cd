@@ -11,11 +11,18 @@ services:
       - JAVA_OPTS="-Dmail.smtp.starttls.enable=true -Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - $CICD_JENKINS_VOLUME:/var/jenkins_home
+      - ${CICD_VOLUME_DIR}/jenkins_home:/var/jenkins_home
 
   nexus:
     image: sonatype/nexus3:3.44.0
     ports:
       - '${CICD_NEXUS_PORT}:8081'
     volumes:
-      - $CICD_NEXUS_VOLUME:/nexus-data
+      - ${CICD_VOLUME_DIR}/nexus-data:/nexus-data
+
+  registry:
+    image: registry:2
+    ports:
+      - '${CICD_REGISTRY_PORT}:5000'
+    volumes:
+      - ${CICD_VOLUME_DIR}/docker-registry:/var/lib/registry
