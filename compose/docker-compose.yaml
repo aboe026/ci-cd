@@ -12,6 +12,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CICD_VOLUME_DIR}/jenkins_home:/var/jenkins_home
+    restart: on-failure
 
   nexus:
     image: sonatype/nexus3:3.44.0
