@@ -17,3 +17,5 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends docker-ce && \
     apt-get clean
+
+COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
