@@ -15,7 +15,7 @@ services:
     restart: on-failure
 
   nexus:
-    image: sonatype/nexus3:3.55.0
+    image: sonatype/nexus3:3.56.0
     ports:
       - '${CICD_NEXUS_PORT}:8081'
     volumes:
