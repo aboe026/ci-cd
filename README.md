@@ -34,7 +34,7 @@ npm run build
 
 ### Start
 
-The firt time brining the environment up, run:
+The firt time brining the environment up (or after changing image versions), run:
 
 ```sh
 npm run create
