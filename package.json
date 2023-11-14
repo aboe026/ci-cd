@@ -18,12 +18,12 @@
   },
   "scripts": {
     "backup": "ts-node src/backup.ts",
-    "build": "cd compose && docker-compose build --progress=plain",
-    "create": "cd compose && docker-compose up -d",
+    "build": "cd compose && docker compose build --progress=plain",
+    "create": "cd compose && docker compose up -d",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint --fix . && prettier --write .",
-    "start": "cd compose && docker-compose start",
-    "stop": "cd compose && docker-compose stop"
+    "start": "cd compose && docker compose start",
+    "stop": "cd compose && docker compose stop"
   },
   "dependencies": {
     "archiver": "5.3.0",
