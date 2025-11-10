@@ -25,6 +25,11 @@ services:
     image: registry:3.0.0
     ports:
       - '${CICD_REGISTRY_PORT}:5000'
+    environment:
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin: '[http://localhost]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods: '[HEAD,GET,OPTIONS,DELETE]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers: '[Authorization,Accept,Cache-Control]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers: '[Docker-Content-Digest]'
     volumes:
       - ${CICD_VOLUME_DIR}/docker-registry:/var/lib/registry
       - ./registry-config.yml:/etc/docker/registry/config.yml
@@ -34,7 +39,7 @@ services:
     ports:
       - '${CICD_REGISTRY_UI_PORT}:80'
     environment:
-      - REGISTRY_URL=http://localhost:5000
+      - NGINX_PROXY_PASS_URL=http://registry:5000
       - SINGLE_REGISTRY=true
       - DELETE_IMAGES=false
       - THEME=dark
