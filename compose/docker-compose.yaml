@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   nexus:
-    image: sonatype/nexus3:3.85.0
+    image: sonatype/nexus3:3.87.1
     ports:
       - '${CICD_NEXUS_PORT}:8081'
     volumes:
