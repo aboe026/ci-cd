@@ -1,21 +1,22 @@
 services:
   caddy:
     image: caddy:2.11.2
-    # restart: unless-stopped
-    entrypoint: ['/bin/sh', '-c', '/entrypoint.sh']
     depends_on:
       - jenkins
       - nexus
       - registry
       - registry-ui
+    environment:
+      - CADDY_DOMAIN=${CADDY_DOMAIN}
+      - CADDY_TLS_MODE=${CADDY_TLS_MODE}
     ports:
       - '80:80'
       - '443:443'
     volumes:
-      - ./Caddyfile.template:/etc/caddy/Caddyfile.template:ro
-      - ./caddy-entrypoint.sh:/entrypoint.sh:ro
-      - ./priv.env:/etc/caddy/priv.env:ro
-      - ./.env:/etc/caddy/.env:ro
+      - ./caddy:/etc/caddy
+      - ${CICD_VOLUME_DIR}/caddy/data:/data
+      - ${CICD_VOLUME_DIR}/caddy/config:/config
+
   jenkins:
     build:
       context: ./

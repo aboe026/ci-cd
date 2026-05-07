@@ -1,14 +1,14 @@
-jenkins.{$DOMAIN} {
+jenkins.{$CADDY_DOMAIN} {
   reverse_proxy jenkins:8080
-  {$TLS_MODE}
+  {$CADDY_TLS_MODE}
 }
 
-nexus.{$DOMAIN} {
+nexus.{$CADDY_DOMAIN} {
   reverse_proxy nexus:8081
-  {$TLS_MODE}
+  {$CADDY_TLS_MODE}
 }
 
-registry.{$DOMAIN} {
+registry.{$CADDY_DOMAIN} {
   reverse_proxy registry:5000
 
   header {
@@ -16,10 +16,10 @@ registry.{$DOMAIN} {
     Docker-Distribution-Api-Version "registry/2.0"
   }
 
-  {$TLS_MODE}
+  {$CADDY_TLS_MODE}
 }
 
-docker.{$DOMAIN} {
+docker.{$CADDY_DOMAIN} {
   reverse_proxy registry-ui:80
-  {$TLS_MODE}
+  {$CADDY_TLS_MODE}
 }
